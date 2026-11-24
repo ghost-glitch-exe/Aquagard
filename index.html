@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07070a">
+<title>AQUA GUARD – Smart Water Quality Monitoring</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23dc143c' d='M32 4C22 18 12 28 12 40a20 20 0 0 0 40 0C52 28 42 18 32 4z'/%3E%3C/svg%3E">
+<style>
+/* =====================================================================
+   AQUA GUARD – crimson / black engineering dashboard theme
+   ===================================================================== */
+:root{
+  --bg:#07070a; --panel:rgba(22,13,17,.84); --panel2:rgba(34,17,23,.9);
+  --line:rgba(220,20,60,.30); --line-soft:rgba(255,255,255,.07);
+  --red:#dc143c; --red2:#ff2d55; --red-dark:#8f0a26;
+  --text:#f5eeee; --muted:#a99a9e;
+  --ok:#22e3a0; --warn:#ffb020; --crit:#ff3355; --info:#38d6ff;
+  --glow:0 0 22px rgba(220,20,60,.45);
+  --radius:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{
+  font-family:"Segoe UI",Roboto,system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;line-height:1.45;overflow-x:hidden;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:-2;
+  background:
+    radial-gradient(900px 520px at 6% -8%,rgba(220,20,60,.30),transparent 60%),
+    radial-gradient(700px 480px at 100% 8%,rgba(150,0,30,.24),transparent 60%),
+    radial-gradient(900px 620px at 50% 125%,rgba(220,20,60,.20),transparent 60%),
+    linear-gradient(180deg,#0b0709,#050506);
+}
+body::after{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(220,20,60,.055) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(220,20,60,.055) 1px,transparent 1px);
+  background-size:44px 44px;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 0%,#000 15%,transparent 75%);
+          mask-image:radial-gradient(ellipse at 50% 0%,#000 15%,transparent 75%);
+}
+.wrap{width:100%;max-width:1280px;margin:0 auto;padding:16px 16px 40px}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:20;
+  display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;
+  padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));
+  background:linear-gradient(180deg,rgba(12,6,9,.96),rgba(12,6,9,.82));
+  border-bottom:1px solid var(--line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+.topbar::after{
+  content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;
+  background:linear-gradient(90deg,transparent,var(--red2),transparent);
+  background-size:200% 100%;animation:sweep 5s linear infinite;
+}
+@keyframes sweep{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand svg{width:44px;height:44px;flex:none;filter:drop-shadow(0 0 10px rgba(220,20,60,.7))}
+.brand h1{font-size:1.35rem;letter-spacing:.22em;font-weight:800;
+  background:linear-gradient(90deg,#fff,#ff6b86 60%,var(--red));-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand p{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;
+  font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  background:rgba(255,255,255,.04);border:1px solid var(--line-soft);color:var(--muted);white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;background:#665;flex:none;display:inline-block}
+.chip.normal,.chip.live{color:var(--ok);border-color:rgba(34,227,160,.4)} .chip.normal .dot,.chip.live .dot{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.chip.warning{color:var(--warn);border-color:rgba(255,176,32,.45)} .chip.warning .dot{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+.chip.critical{color:var(--crit);border-color:rgba(255,51,85,.55)} .chip.critical .dot{background:var(--crit);box-shadow:0 0 8px var(--crit)}
+.chip.sim,.chip.info{color:var(--info);border-color:rgba(56,214,255,.4)} .chip.sim .dot,.chip.info .dot{background:var(--info);box-shadow:0 0 8px var(--info)}
+.dot.normal{background:var(--ok);box-shadow:0 0 8px var(--ok);animation:blink 1.6s infinite}
+.dot.warning{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+.dot.critical{background:var(--crit);box-shadow:0 0 8px var(--crit)}
+@keyframes blink{50%{opacity:.35}}
+
+/* ---------- Banner / summary ---------- */
+.banner{margin:16px 0;padding:12px 16px;border-radius:12px;font-size:.9rem;border:1px solid;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;animation:fadeUp .5s both}
+.banner b{letter-spacing:.08em;text-transform:uppercase;font-size:.8rem}
+.banner.sim{background:rgba(56,214,255,.07);border-color:rgba(56,214,255,.4);color:#bdefff}
+.banner.live{background:rgba(34,227,160,.07);border-color:rgba(34,227,160,.4);color:#bdf5de}
+.banner.off{background:rgba(255,176,32,.08);border-color:rgba(255,176,32,.45);color:#ffe2a8}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:6px}
+.stat{padding:14px 16px;border-radius:14px;background:var(--panel);border:1px solid var(--line);animation:fadeUp .5s both}
+.stat .k{display:block;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.stat .v{font-size:1.25rem;font-weight:800;letter-spacing:.04em}
+.stat .v.small{font-size:.92rem;font-weight:700}
+.v.normal{color:var(--ok)} .v.warning{color:var(--warn)} .v.critical{color:var(--crit);text-shadow:0 0 12px rgba(255,51,85,.6)} .v.none{color:var(--muted)}
+
+h2.section-title{margin:28px 0 12px;font-size:.85rem;letter-spacing:.24em;text-transform:uppercase;color:#ff8da1;display:flex;align-items:center;gap:12px}
+h2.section-title::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+
+/* ---------- Panels & grids ---------- */
+.grid-sensors{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,430px),1fr));gap:16px}
+.panel,.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;
+  box-shadow:0 10px 30px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.04);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:fadeUp .55s both;min-width:0;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.panel-head,.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}
+.panel-head h3{font-size:1rem;letter-spacing:.1em;text-transform:uppercase}
+.ptitle{display:block;font-weight:700;font-size:1rem;letter-spacing:.04em}
+.psub{display:block;font-size:.72rem;color:var(--muted)}
+
+/* ---------- Sensor cards ---------- */
+.sensor{position:relative;overflow:hidden;transition:border-color .3s,box-shadow .3s}
+.sensor::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ok);transition:background .3s}
+.sensor[data-sev=warning]{border-color:rgba(255,176,32,.55);box-shadow:0 0 24px rgba(255,176,32,.14),0 10px 30px rgba(0,0,0,.45)}
+.sensor[data-sev=warning]::before{background:var(--warn)}
+.sensor[data-sev=critical]{border-color:rgba(255,51,85,.85);animation:critPulse 1.6s ease-in-out infinite}
+.sensor[data-sev=critical]::before{background:var(--crit)}
+@keyframes critPulse{0%,100%{box-shadow:0 0 10px rgba(255,51,85,.25),0 10px 30px rgba(0,0,0,.45)}50%{box-shadow:0 0 34px rgba(255,51,85,.55),0 10px 30px rgba(0,0,0,.45)}}
+.value-row{display:flex;align-items:baseline;gap:8px;margin:2px 0 10px}
+.value{font-size:2.8rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:.01em;text-shadow:0 0 18px rgba(220,20,60,.45)}
+.value.flash{animation:flash .5s ease-out}
+@keyframes flash{from{color:#fff;text-shadow:0 0 26px #fff}to{}}
+.unit{font-size:1rem;color:var(--muted);font-weight:600}
+.meter{position:relative;height:9px;border-radius:99px;background:rgba(255,255,255,.07);margin:6px 0 8px;overflow:visible}
+.meter-fill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--ok),#7ff0c8);transition:width .6s ease,background .3s}
+.sensor[data-sev=warning] .meter-fill{background:linear-gradient(90deg,var(--ok),var(--warn))}
+.sensor[data-sev=critical] .meter-fill{background:linear-gradient(90deg,var(--warn),var(--crit))}
+.mk{position:absolute;top:-3px;width:2px;height:15px;border-radius:2px}
+.mk.w{background:var(--warn)} .mk.c{background:var(--crit)}
+.thr-line{font-size:.78rem;color:var(--muted);margin-bottom:8px}
+.thr-line b{color:var(--text)}
+.src-tag{display:inline-block;font-size:.66rem;font-weight:800;letter-spacing:.1em;padding:3px 8px;border-radius:6px;margin-bottom:8px}
+.src-tag.sim{background:rgba(56,214,255,.12);color:var(--info);border:1px solid rgba(56,214,255,.4)}
+.src-tag.live{background:rgba(34,227,160,.12);color:var(--ok);border:1px solid rgba(34,227,160,.4)}
+.src-tag.off{background:rgba(255,176,32,.12);color:var(--warn);border:1px solid rgba(255,176,32,.4)}
+canvas.chart{display:block;width:100%;height:160px;border-radius:10px;background:rgba(0,0,0,.35);border:1px solid var(--line-soft)}
+.mini-stats{display:flex;justify-content:space-between;gap:8px;margin-top:10px;font-size:.74rem;color:var(--muted)}
+.mini-stats b{color:var(--text);font-variant-numeric:tabular-nums}
+
+/* ---------- Badges ---------- */
+.badge{display:inline-block;padding:4px 10px;border-radius:7px;font-size:.7rem;font-weight:800;letter-spacing:.1em;white-space:nowrap;border:1px solid transparent}
+.badge.normal{background:rgba(34,227,160,.12);color:var(--ok);border-color:rgba(34,227,160,.45)}
+.badge.warning{background:rgba(255,176,32,.13);color:var(--warn);border-color:rgba(255,176,32,.5)}
+.badge.critical{background:rgba(255,51,85,.15);color:var(--crit);border-color:rgba(255,51,85,.6)}
+.badge.info{background:rgba(56,214,255,.12);color:var(--info);border-color:rgba(56,214,255,.45)}
+.badge.off{background:rgba(255,255,255,.05);color:var(--muted);border-color:var(--line-soft)}
+
+/* ---------- Buttons / inputs ---------- */
+.btn-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.btn{
+  appearance:none;-webkit-appearance:none;cursor:pointer;min-height:44px;padding:10px 18px;border-radius:11px;
+  font:inherit;font-size:.78rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#fff;
+  background:linear-gradient(135deg,var(--red2),var(--red-dark));border:1px solid rgba(255,120,140,.45);
+  box-shadow:var(--glow);transition:transform .15s,box-shadow .2s,filter .2s,opacity .2s;flex:1 1 auto;touch-action:manipulation;
+}
+.btn:hover:not(:disabled){filter:brightness(1.12);box-shadow:0 0 30px rgba(255,45,85,.65)}
+.btn:active:not(:disabled){transform:scale(.97)}
+.btn:disabled{opacity:.42;cursor:not-allowed;box-shadow:none}
+.btn.ghost{background:rgba(220,20,60,.08);color:#ff9fb0;box-shadow:none;border-color:var(--line)}
+.btn.ghost:hover:not(:disabled){background:rgba(220,20,60,.2);box-shadow:var(--glow)}
+.btn.active{background:linear-gradient(135deg,var(--red2),var(--red-dark));color:#fff;box-shadow:var(--glow)}
+.btn.sm{min-height:34px;padding:6px 12px;font-size:.68rem;flex:none}
+.seg{display:flex;gap:8px;margin:14px 0 4px}
+.field{margin-top:12px}
+.field label,.thr-row label{display:block;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+input[type=number],input[type=url],input[type=text]{
+  width:100%;background:#0b0709;border:1px solid var(--line);color:var(--text);padding:10px 12px;border-radius:10px;
+  font:inherit;font-size:16px;outline:none;transition:border-color .2s,box-shadow .2s;
+}
+input:focus{border-color:var(--red2);box-shadow:0 0 0 3px rgba(255,45,85,.2)}
+input.bad{border-color:var(--crit);box-shadow:0 0 0 3px rgba(255,51,85,.2)}
+
+/* ---------- Key/value lists, tables ---------- */
+dl.kv{display:grid;grid-template-columns:minmax(120px,1fr) 1.5fr;gap:9px 12px;font-size:.88rem}
+dl.kv dt{color:var(--muted)}
+dl.kv dd{text-align:right;word-break:break-word;font-weight:600;display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap}
+.hint{margin-top:12px;font-size:.84rem;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid var(--line-soft);color:#e7d9dc}
+.hint.bad{border-color:rgba(255,51,85,.5);background:rgba(255,51,85,.08)}
+.hint.good{border-color:rgba(34,227,160,.4);background:rgba(34,227,160,.06)}
+.fine{margin-top:12px;font-size:.74rem;color:var(--muted)}
+.subhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:16px 0 8px;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:#ff9fb0}
+.subhead small{color:var(--muted)}
+table.tbl{width:100%;border-collapse:collapse;margin-top:14px;font-size:.8rem}
+.tbl th{text-align:left;color:var(--muted);font-weight:600;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;padding:6px 6px;border-bottom:1px solid var(--line)}
+.tbl td{padding:8px 6px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+pre.code{margin-top:14px;padding:12px;border-radius:10px;background:#050304;border:1px solid var(--line-soft);color:#ffb3c0;font-size:.74rem;overflow-x:auto;white-space:pre}
+
+/* ---------- Alerts ---------- */
+.active-alerts{display:flex;flex-direction:column;gap:8px}
+.active-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--line-soft);background:rgba(255,255,255,.03);font-size:.88rem}
+.active-row.warning{border-color:rgba(255,176,32,.5);background:rgba(255,176,32,.07)}
+.active-row.critical{border-color:rgba(255,51,85,.65);background:rgba(255,51,85,.1)}
+.active-row span.t{font-size:.72rem;color:var(--muted)}
+ul.alert-list{list-style:none;max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:4px;overscroll-behavior:contain}
+.alert-item{padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid var(--line-soft);border-left-width:3px;font-size:.84rem;animation:fadeUp .35s both}
+.alert-item.sev-warning{border-left-color:var(--warn)} .alert-item.sev-critical{border-left-color:var(--crit)}
+.alert-item.sev-normal{border-left-color:var(--ok)} .alert-item.sev-info{border-left-color:var(--info)}
+.ai-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:5px}
+.ai-time{font-size:.7rem;color:var(--muted)}
+.ai-meta{margin-top:4px;font-size:.72rem;color:var(--muted)}
+.empty{padding:16px;text-align:center;color:var(--muted);font-size:.84rem;border:1px dashed var(--line);border-radius:10px}
+
+/* ---------- Thresholds ---------- */
+.thr-row{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:10px;align-items:end;padding:12px 0;border-bottom:1px solid var(--line-soft)}
+.thr-row .nm{font-weight:700;font-size:.9rem}
+.thr-row .nm small{display:block;color:var(--muted);font-weight:400;font-size:.7rem}
+.thr-msg{grid-column:1/-1;font-size:.76rem;color:var(--crit);min-height:0}
+.ctrl-status{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;font-size:.88rem;margin-bottom:6px}
+.ctrl-status div{padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.035);border:1px solid var(--line-soft)}
+.ctrl-status span{display:block;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.ctrl-status b{font-size:.95rem}
+
+/* ---------- Toasts ---------- */
+.toasts{position:fixed;right:12px;left:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:50;display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:none}
+.toast{white-space:pre-line;max-width:420px;width:100%;pointer-events:auto;padding:12px 14px;border-radius:12px;font-size:.86rem;background:#16090d;border:1px solid var(--line);
+  box-shadow:0 10px 30px rgba(0,0,0,.6);opacity:0;transform:translateY(12px);transition:opacity .3s,transform .3s}
+.toast.show{opacity:1;transform:none}
+.toast.warning{border-color:var(--warn)} .toast.critical{border-color:var(--crit);box-shadow:0 0 24px rgba(255,51,85,.4)}
+.toast.normal{border-color:var(--ok)} .toast.info{border-color:var(--info)}
+
+footer{margin-top:34px;text-align:center;font-size:.72rem;color:var(--muted);letter-spacing:.06em}
+noscript{display:block;padding:16px;text-align:center;color:var(--crit)}
+
+@media (max-width:560px){
+  .brand h1{font-size:1.1rem;letter-spacing:.16em}
+  .brand svg{width:38px;height:38px}
+  .value{font-size:2.4rem}
+  .thr-row{grid-template-columns:1fr 1fr}
+  .thr-row .nm{grid-column:1/-1}
+  .chips{width:100%}
+  dl.kv{grid-template-columns:1fr 1.2fr}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<noscript>AQUA GUARD requires JavaScript to run.</noscript>
+
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5c7a"/><stop offset="1" stop-color="#8f0a26"/></linearGradient></defs>
+      <path d="M32 3C22 17 11 28 11 40a21 21 0 0 0 42 0C53 28 42 17 32 3z" fill="url(#lg)"/>
+      <path d="M22 41c3-4 6-4 10 0s7 4 10 0" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".9"/>
+      <path d="M32 21l8 3v7c0 5-3.500 8-8 10-4.500-2-8-5-8-10v-7z" fill="none" stroke="#fff" stroke-width="1.800" opacity=".55"/>
+    </svg>
+    <div><h1>AQUA GUARD</h1><p>Smart Water Quality Monitoring System</p></div>
+  </div>
+  <div class="chips" aria-label="System status">
+    <span class="chip" id="chipMonitor"><span class="dot"></span><span class="txt">--</span></span>
+    <span class="chip" id="chipSource"><span class="dot"></span><span class="txt">--</span></span>
+    <span class="chip" id="chipEsp"><span class="dot"></span><span class="txt">--</span></span>
+    <span class="chip" id="chipNotif"><span class="dot"></span><span class="txt">--</span></span>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="sourceBanner" class="banner sim" role="status">
+    <b id="bannerTitle">Simulated data</b><span id="bannerText"></span>
+  </div>
+
+  <section class="summary" aria-label="System summary">
+    <div class="stat"><span class="k">Water status</span><span class="v none" id="overallStatus">NO DATA</span></div>
+    <div class="stat"><span class="k">Monitoring</span><span class="v" id="monitorStatus">--</span></div>
+    <div class="stat"><span class="k">Active alerts</span><span class="v" id="activeCount">0</span></div>
+    <div class="stat"><span class="k">Last update</span><span class="v small" id="lastUpdate">No data yet</span></div>
+  </section>
+
+  <h2 class="section-title">Live water monitoring</h2>
+  <section class="grid-sensors" id="sensorGrid" aria-label="Sensor readings"></section>
+
+  <h2 class="section-title">Alert center &amp; notifications</h2>
+  <section class="grid-2">
+    <div class="panel" id="alertPanel">
+      <div class="panel-head"><h3>Alert Center</h3><span class="badge off" id="alertBadge">0 ACTIVE</span></div>
+      <div id="activeAlerts" class="active-alerts"></div>
+      <div class="subhead">
+        <span>Alert history <small id="alertCount">(0)</small></span>
+        <button class="btn ghost sm" id="btnClearAlerts" type="button">Clear alert history</button>
+      </div>
+      <ul class="alert-list" id="alertList"></ul>
+    </div>
+
+    <div class="panel" id="notifPanel">
+      <div class="panel-head"><h3>Browser Notifications</h3><span class="badge off" id="notifBadge">--</span></div>
+      <dl class="kv">
+        <dt>Notifications API</dt><dd id="nsSupport">--</dd>
+        <dt>Secure context (HTTPS / localhost)</dt><dd id="nsSecure">--</dd>
+        <dt>Permission</dt><dd id="nsPerm">--</dd>
+        <dt>Service worker</dt><dd id="nsSW">--</dd>
+        <dt>Notifications sent</dt><dd id="nsCount">0</dd>
+        <dt>Last notification</dt><dd id="nsLast">None yet</dd>
+      </dl>
+      <p class="hint" id="notifHint"></p>
+      <div class="btn-row">
+        <button class="btn" id="btnEnable" type="button">Enable notifications</button>
+        <button class="btn ghost" id="btnTest" type="button">Test notification</button>
+      </div>
+      <p class="fine">Notifications are sent only while this dashboard stays open and receives readings. A service worker is not a background sensor monitor: alerts after the dashboard is closed require a real push server.</p>
+    </div>
+  </section>
+
+  <h2 class="section-title">ESP32 integration &amp; thresholds</h2>
+  <section class="grid-2">
+    <div class="panel" id="espPanel">
+      <div class="panel-head"><h3>ESP32 Integration</h3><span class="badge off" id="espBadge">NOT CONFIGURED</span></div>
+      <dl class="kv">
+        <dt>Data source</dt><dd id="espSource">--</dd>
+        <dt>Link status</dt><dd><span class="dot" id="espDot"></span><span id="espLink">--</span></dd>
+        <dt>Last ESP32 packet</dt><dd id="espLast">None received</dd>
+        <dt>ESP32 packets received</dt><dd id="espPackets">0</dd>
+        <dt>HTTP polling</dt><dd id="espPoll">Not polling</dd>
+      </dl>
+      <div class="seg">
+        <button class="btn ghost" id="btnModeSim" type="button">Simulated data</button>
+        <button class="btn ghost" id="btnModeEsp" type="button">ESP32 live data</button>
+      </div>
+      <div class="field">
+        <label for="espUrl">ESP32 endpoint (returns JSON)</label>
+        <input id="espUrl" type="url" inputmode="url" autocomplete="off" placeholder="http://192.168.1.50/data">
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="btnEspConnect" type="button">Start polling</button>
+        <button class="btn ghost" id="btnEspDisconnect" type="button">Stop polling</button>
+      </div>
+      <table class="tbl" aria-label="Sensor connections">
+        <thead><tr><th>Sensor</th><th>Expected pin</th><th>State</th></tr></thead>
+        <tbody id="sensorRows"></tbody>
+      </table>
+      <pre class="code">// Expected JSON from the ESP32:
+// {"temperature":26.4,"turbidity":2.1,"tds":285}
+// Any transport (WebSocket, MQTT, Firebase...) can call:
+receiveReadings({ temperature: 26.4, turbidity: 2.1, tds: 285 }, 'esp32');</pre>
+    </div>
+
+    <div class="panel" id="thrPanel">
+      <div class="panel-head"><h3>Threshold Configuration</h3></div>
+      <p class="hint">Status becomes <b>Warning</b> at or above the warning value and <b>Critical</b> at or above the critical value. Critical must be higher than Warning.</p>
+      <div id="thrForm"></div>
+      <div class="btn-row">
+        <button class="btn" id="btnApplyThr" type="button">Apply thresholds</button>
+        <button class="btn ghost" id="btnDefaultThr" type="button">Restore defaults</button>
+      </div>
+      <p class="fine">Recovery uses a 3&nbsp;% hysteresis band so a value hovering around a threshold does not flood you with alerts. Settings are saved in this browser.</p>
+    </div>
+  </section>
+
+  <h2 class="section-title">System controls</h2>
+  <section class="panel" id="controlPanel">
+    <div class="ctrl-status">
+      <div><span>Monitoring status</span><b id="ctlStatus">--</b></div>
+      <div><span>Last update</span><b id="ctlUpdate">No data yet</b></div>
+      <div><span>Reading sets processed</span><b id="ctlCount">0</b></div>
+      <div><span>Readings ignored while paused</span><b id="ctlIgnored">0</b></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="btnPause" type="button">Pause monitoring</button>
+      <button class="btn" id="btnResume" type="button">Resume monitoring</button>
+      <button class="btn ghost" id="btnReset" type="button">Reset dashboard</button>
+    </div>
+    <div class="subhead"><span>Simulation test tools</span></div>
+    <div class="btn-row" style="margin-top:0">
+      <button class="btn ghost" id="btnDemoWarn" type="button">Simulate warning</button>
+      <button class="btn ghost" id="btnDemoCrit" type="button">Simulate critical</button>
+    </div>
+    <p class="fine">Simulation tools push a temporary, clearly labelled simulated excursion into one parameter at a time so you can test alerts and notifications. They are disabled when ESP32 live data is selected.</p>
+  </section>
+
+  <footer>AQUA GUARD v1.0 · Engineering demonstration dashboard · Simulated values are never real sensor measurements</footer>
+</main>
+
+<div id="toasts" class="toasts" aria-live="polite" aria-atomic="false"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   AQUA GUARD – Smart Water Quality Monitoring Dashboard
+   Sections:
+     1. Configuration & constants
+     2. State
+     3. Utilities
+     4. Thresholds (load / validate / apply)
+     5. Severity evaluation & alert history
+     6. receiveReadings()  <-- ESP32 / real-data entry point
+     7. Simulation engine (clearly labelled simulated data)
+     8. ESP32 link monitoring & optional HTTP polling
+     9. Notifications (Notifications API + Service Worker)
+    10. Rendering (cards, charts, alerts, panels)
+    11. System controls
+    12. Initialisation
+   ===================================================================== */
+
+/* ---------- 1. Configuration & constants ---------- */
+const APP_VERSION = '1.0.0';
+const SIM_INTERVAL_MS = 2000;      // simulated reading period
+const HISTORY_LENGTH = 60;         // points kept per graph
+const ESP_TIMEOUT_MS = 10000;      // ESP32 considered offline after this silence
+const HYSTERESIS = 0.03;           // 3 % band used when severity decreases
+const MAX_ALERTS = 100;            // alert history limit
+const STORE = {
+  thresholds: 'aquaguard.thresholds.v1',
+  alerts: 'aquaguard.alerts.v1',
+  espUrl: 'aquaguard.espurl.v1'
+};
+
+const PARAMS = [
+  { key: 'temperature', label: 'Temperature', unit: '°C', decimals: 1, color: '#ff4d6d',
+    aliases: ['temperature', 'temp'], range: { min: 0, max: 100 }, defaults: { warn: 30, crit: 35 },
+    sim: { base: 26.5, noise: 0.22 }, chartMin: 15, sensor: 'DS18B20 waterproof probe', pin: 'GPIO 4 (1-Wire)' },
+  { key: 'turbidity', label: 'Turbidity', unit: 'NTU', decimals: 1, color: '#ff9966',
+    aliases: ['turbidity', 'ntu'], range: { min: 0, max: 3000 }, defaults: { warn: 5, crit: 10 },
+    sim: { base: 2.2, noise: 0.18 }, chartMin: 0, sensor: 'Analog turbidity module', pin: 'GPIO 34 (ADC1)' },
+  { key: 'tds', label: 'Total Dissolved Solids', unit: 'PPM', decimals: 0, color: '#38d6ff',
+    aliases: ['tds', 'ppm'], range: { min: 0, max: 5000 }, defaults: { warn: 500, crit: 1000 },
+    sim: { base: 280, noise: 7 }, chartMin: 0, sensor: 'Analog TDS probe', pin: 'GPIO 35 (ADC1)' }
+];
+const PARAM_BY_KEY = {};
+PARAMS.forEach(function (p) { PARAM_BY_KEY[p.key] = p; });
+
+const SEV_LABEL = { normal: 'NORMAL', warning: 'WARNING', critical: 'CRITICAL', info: 'INFO', none: 'NO DATA' };
+const ALERT_LABEL = { normal: 'RECOVERED', warning: 'WARNING', critical: 'CRITICAL', info: 'INFO' };
+const SEV_RANK = { normal: 0, warning: 1, critical: 2 };
+
+/* ---------- 2. State ---------- */
+const state = {
+  monitoring: true,
+  mode: 'simulation',            // 'simulation' | 'esp32'
+  thresholds: {},
+  severity: {}, readings: {}, history: {}, lastSeen: {}, sensorOk: {}, activeSince: {}, lastNotified: {},
+  alerts: [],
+  lastUpdate: null,
+  lastEspTime: null, espOnline: false, packets: 0,
+  readingsCount: 0, ignoredCount: 0,
+  sim: { values: {}, force: null, demoIdx: 0 },
+  notif: { supported: false, secure: false, swStatus: 'idle', swDetail: '', reg: null, sent: 0, last: null },
+  poll: { timer: null, url: '', busy: false, status: 'Not polling' },
+  icon: undefined, badge: undefined
+};
+
+/* ---------- 3. Utilities ---------- */
+function $(id) { return document.getElementById(id); }
+function el(tag, cls, text) {
+  var e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+function fmtValue(p, v) { return Number(v).toFixed(p.decimals); }
+function pad2(n) { return (n < 10 ? '0' : '') + n; }
+function timeStr(ts) { var d = new Date(ts); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds()); }
+function dateTimeStr(ts) { var d = new Date(ts); return d.toLocaleDateString() + ' ' + timeStr(ts); }
+function agoStr(ts) {
+  var s = Math.max(0, Math.round((Date.now() - ts) / 1000));
+  return s < 60 ? s + ' s ago' : Math.floor(s / 60) + ' min ago';
+}
+function hexToRgba(hex, a) {
+  var n = parseInt(hex.slice(1), 16);
+  return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+}
+function storeGet(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } }
+function storeSet(key, val) { try { window.localStorage.setItem(key, val); } catch (e) { /* storage unavailable */ } }
+function bind(id, evt, fn) {
+  var e = $(id);
+  if (!e) { console.error('AQUA GUARD: missing element #' + id); return; }
+  e.addEventListener(evt, fn);
+}
+function setChip(id, cls, text) {
+  var chip = $(id);
+  chip.className = 'chip ' + cls;
+  chip.querySelector('.txt').textContent = text;
+}
+function toast(message, type, ms) {
+  var box = $('toasts');
+  var t = el('div', 'toast ' + (type || 'info'));
+  t.textContent = message;
+  box.appendChild(t);
+  window.requestAnimationFrame(function () { t.classList.add('show'); });
+  setTimeout(function () {
+    t.classList.remove('show');
+    setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 350);
+  }, ms || 5200);
+  while (box.children.length > 4) box.removeChild(box.firstChild);
+}
+
+/* ---------- 4. Thresholds ---------- */
+function defaultThresholds() {
+  var out = {};
+  PARAMS.forEach(function (p) { out[p.key] = { warn: p.defaults.warn, crit: p.defaults.crit }; });
+  return out;
+}
+
+/** Validate raw form values. Returns { ok, errors:{key:msg}, values:{key:{warn,crit}} }. */
+function validateThresholds(input) {
+  var errors = {}, values = {};
+  PARAMS.forEach(function (p) {
+    var raw = input[p.key] || {};
+    var rw = raw.warn, rc = raw.crit;
+    var empty = function (x) { return x === undefined || x === null || String(x).trim() === ''; };
+    if (empty(rw) || empty(rc)) { errors[p.key] = 'Enter both a warning and a critical value.'; return; }
+    var w = Number(rw), c = Number(rc);
+    if (!isFinite(w) || !isFinite(c)) { errors[p.key] = 'Values must be valid numbers.'; return; }
+    if (w < p.range.min || c > p.range.max) {
+      errors[p.key] = 'Allowed range is ' + p.range.min + ' to ' + p.range.max + ' ' + p.unit + '.'; return;
+    }
+    if (w <= 0) { errors[p.key] = 'Warning threshold must be greater than 0.'; return; }
+    if (c <= w) { errors[p.key] = 'Critical must be greater than warning.'; return; }
+    values[p.key] = { warn: w, crit: c };
+  });
+  return { ok: Object.keys(errors).length === 0, errors: errors, values: values };
+}
+
+function loadThresholds() {
+  var stored = null;
+  try { stored = JSON.parse(storeGet(STORE.thresholds) || 'null'); } catch (e) { stored = null; }
+  var result = stored ? validateThresholds(stored) : null;
+  state.thresholds = (result && result.ok) ? result.values : defaultThresholds();
+}
+function saveThresholds() { storeSet(STORE.thresholds, JSON.stringify(state.thresholds)); }
+
+function buildThresholdForm() {
+  var host = $('thrForm');
+  host.textContent = '';
+  PARAMS.forEach(function (p) {
+    var row = el('div', 'thr-row');
+    var nm = el('div', 'nm', p.label);
+    nm.appendChild(el('small', '', 'Unit: ' + p.unit + ' · allowed ' + p.range.min + '–' + p.range.max));
+    row.appendChild(nm);
+    ['warn', 'crit'].forEach(function (kind) {
+      var wrap = el('div');
+      var lab = el('label', '', kind === 'warn' ? 'Warning ≥' : 'Critical ≥');
+      lab.setAttribute('for', 'thr-' + kind + '-' + p.key);
+      var inp = el('input');
+      inp.type = 'number'; inp.step = 'any'; inp.inputMode = 'decimal';
+      inp.id = 'thr-' + kind + '-' + p.key;
+      wrap.appendChild(lab); wrap.appendChild(inp); row.appendChild(wrap);
+    });
+    var msg = el('div', 'thr-msg'); msg.id = 'thr-msg-' + p.key;
+    row.appendChild(msg);
+    host.appendChild(row);
+  });
+  fillThresholdInputs();
+}
+function fillThresholdInputs() {
+  PARAMS.forEach(function (p) {
+    $('thr-warn-' + p.key).value = state.thresholds[p.key].warn;
+    $('thr-crit-' + p.key).value = state.thresholds[p.key].crit;
+  });
+  showThresholdErrors({});
+}
+function showThresholdErrors(errors) {
+  PARAMS.forEach(function (p) {
+    var bad = !!errors[p.key];
+    $('thr-msg-' + p.key).textContent = bad ? errors[p.key] : '';
+    $('thr-warn-' + p.key).classList.toggle('bad', bad);
+    $('thr-crit-' + p.key).classList.toggle('bad', bad);
+  });
+}
+function applyThresholds() {
+  var input = {};
+  PARAMS.forEach(function (p) {
+    input[p.key] = { warn: $('thr-warn-' + p.key).value, crit: $('thr-crit-' + p.key).value };
+  });
+  var result = validateThresholds(input);
+  showThresholdErrors(result.errors);
+  if (!result.ok) { toast('Thresholds not applied – please fix the highlighted fields.', 'warning'); return; }
+  state.thresholds = result.values;
+  saveThresholds();
+  reevaluateAll();
+  renderAll();
+  toast('Thresholds applied and saved.', 'normal');
+}
+function restoreDefaultThresholds() {
+  state.thresholds = defaultThresholds();
+  saveThresholds();
+  fillThresholdInputs();
+  reevaluateAll();
+  renderAll();
+  toast('Default thresholds restored.', 'info');
+}
+/** Re-check the latest reading of each parameter against the (new) thresholds. */
+function reevaluateAll() {
+  PARAMS.forEach(function (p) {
+    var r = state.readings[p.key];
+    if (!r) return;
+    var prev = state.severity[p.key];
+    var next = evaluateSeverity(p.key, r.value, prev);
+    r.severity = next;
+    state.severity[p.key] = next;
+    if (next !== prev) handleSeverityChange(p, prev, next, r.value, r.simulated, Date.now());
+  });
+}
+
+/* ---------- 5. Severity evaluation & alert history ---------- */
+/** Pure function: returns 'normal' | 'warning' | 'critical' with hysteresis on the way down. */
+function evaluateSeverity(key, value, prev) {
+  var t = state.thresholds[key];
+  var warnOff = t.warn * (1 - HYSTERESIS), critOff = t.crit * (1 - HYSTERESIS);
+  if (value >= t.crit) return 'critical';
+  if (prev === 'critical' && value >= critOff) return 'critical';
+  if (value >= t.warn) return 'warning';
+  if ((prev === 'warning' || prev === 'critical') && value >= warnOff) return 'warning';
+  return 'normal';
+}
+
+function processReading(p, value, now, simulated) {
+  var k = p.key;
+  var prev = state.severity[k];
+  var next = evaluateSeverity(k, value, prev);
+  state.readings[k] = { value: value, time: now, severity: next, simulated: simulated };
+  var h = state.history[k];
+  h.push({ t: now, v: value });
+  while (h.length > HISTORY_LENGTH) h.shift();
+  state.lastSeen[k] = now;
+  state.sensorOk[k] = true;
+  state.severity[k] = next;
+  if (next !== prev) handleSeverityChange(p, prev, next, value, simulated, now);
+}
+
+/** Called ONLY when the severity of a parameter changes – this is what prevents repeat alerts. */
+function handleSeverityChange(p, prev, next, value, simulated, now) {
+  var t = state.thresholds[p.key];
+  var val = fmtValue(p, value) + ' ' + p.unit;
+  var title, body;
+  if (next === 'normal') {
+    title = '✅ RECOVERED – ' + p.label;
+    body = p.label + ' is back to normal: ' + val + '.';
+    state.activeSince[p.key] = null;
+  } else if (next === 'warning') {
+    if (prev === 'critical') {
+      title = '⚠️ IMPROVED TO WARNING – ' + p.label;
+      body = p.label + ' dropped from critical to warning: ' + val + ' (warning ≥ ' + t.warn + ' ' + p.unit + ').';
+    } else {
+      title = '⚠️ WARNING – ' + p.label;
+      body = p.label + ' is ' + val + ' (warning threshold ' + t.warn + ' ' + p.unit + ').';
+      state.activeSince[p.key] = now;
+    }
+  } else {
+    title = '🚨 CRITICAL – ' + p.label;
+    body = p.label + ' is ' + val + ' (critical threshold ' + t.crit + ' ' + p.unit + ').';
+    if (prev === 'warning') body += ' Escalated from warning.';
+    if (!state.activeSince[p.key]) state.activeSince[p.key] = now;
+  }
+  if (simulated) body += ' [Simulated demo data]';
+
+  addAlert({ time: now, severity: next, key: p.key, label: p.label, value: value, unit: p.unit,
+             message: body, simulated: simulated, kind: 'reading' });
+  toast(title + '\n' + body, next === 'normal' ? 'normal' : next);
+
+  if (state.lastNotified[p.key] !== next) {          // extra de-duplication guard
+    state.lastNotified[p.key] = next;
+    sendNotification({ title: title, body: body, tag: 'aquaguard-' + p.key, severity: next, param: p.key });
+  }
+}
+
+function addAlert(a) {
+  a.id = Date.now() + '-' + Math.floor(Math.random() * 100000);
+  state.alerts.unshift(a);
+  if (state.alerts.length > MAX_ALERTS) state.alerts.length = MAX_ALERTS;
+  saveAlerts();
+}
+function saveAlerts() { storeSet(STORE.alerts, JSON.stringify(state.alerts)); }
+function loadAlerts() {
+  var list = null;
+  try { list = JSON.parse(storeGet(STORE.alerts) || 'null'); } catch (e) { list = null; }
+  state.alerts = Array.isArray(list) ? list.filter(function (a) {
+    return a && typeof a.message === 'string' && typeof a.time === 'number' && ALERT_LABEL[a.severity];
+  }).slice(0, MAX_ALERTS) : [];
+}
+function clearAlertHistory() {
+  state.alerts = [];
+  saveAlerts();
+  renderAlerts();
+  toast('Alert history cleared.', 'info');
+}
+
+/* ---------- 6. receiveReadings() – the ESP32 / real-data entry point ----------
+   Call this with real sensor data from ANY transport (HTTP polling, WebSocket,
+   MQTT, Firebase, Web Serial ...):
+
+       receiveReadings({ temperature: 26.4, turbidity: 2.1, tds: 285 }, 'esp32');
+
+   - source 'simulation' is reserved for the built-in simulator.
+   - Any other source is treated as REAL data; the dashboard then switches to
+     ESP32 mode, stops the simulator and labels values as live.
+   - Returns { ok, accepted, errors, error }.
+   -------------------------------------------------------------------------- */
+function pickValue(data, p) {
+  for (var i = 0; i < p.aliases.length; i++) {
+    if (Object.prototype.hasOwnProperty.call(data, p.aliases[i])) return data[p.aliases[i]];
+  }
+  return undefined;
+}
+
+function receiveReadings(data, source) {
+  source = (typeof source === 'string' && source.trim()) ? source.trim() : 'esp32';
+  var simulated = (source === 'simulation');
+
+  if (!data || typeof data !== 'object') {
+    return { ok: false, accepted: 0, errors: [], error: 'Readings must be an object like {temperature, turbidity, tds}.' };
+  }
+  if (simulated && state.mode !== 'simulation') {
+    return { ok: false, accepted: 0, errors: [], error: 'Simulation is not the active data source.' };
+  }
+  if (!simulated && state.mode === 'simulation') switchMode('esp32');   // real data arrived
+
+  var now = Date.now();
+  if (!simulated) {                 // the link is alive even if monitoring is paused
+    state.lastEspTime = now;
+    state.packets++;
+    checkEspLink();
+  }
+  if (!state.monitoring) {
+    state.ignoredCount++;
+    renderEsp(); renderControls();
+    return { ok: false, accepted: 0, errors: [], error: 'Monitoring is paused; readings ignored.' };
+  }
+
+  var accepted = 0, errors = [];
+  PARAMS.forEach(function (p) {
+    var raw = pickValue(data, p);
+    if (raw === undefined || raw === null || raw === '') {
+      errors.push(p.label + ': missing');
+      if (!simulated) state.sensorOk[p.key] = false;
+      return;
+    }
+    var v = Number(raw);
+    if (!isFinite(v) || v < 0) {      // also rejects the DS18B20 "-127" disconnected value
+      errors.push(p.label + ': invalid value (' + raw + ')');
+      if (!simulated) state.sensorOk[p.key] = false;
+      return;
+    }
+    processReading(p, v, now, simulated);
+    accepted++;
+  });
+
+  if (accepted > 0) { state.lastUpdate = now; state.readingsCount++; }
+  renderAll();
+  if (accepted > 0) flashValues();
+  return { ok: accepted > 0, accepted: accepted, errors: errors, error: accepted ? undefined : errors.join('; ') };
+}
+window.receiveReadings = receiveReadings;
+
+/* ---------- 7. Simulation engine (SIMULATED data – never presented as real) ---------- */
+function simTick() {
+  if (!state.monitoring || state.mode !== 'simulation') return;
+  var f = state.sim.force;
+  var out = {};
+  PARAMS.forEach(function (p) {
+    var forced = f && f.key === p.key && f.ticks > 0;
+    var target = forced ? f.target : p.sim.base;
+    var k = forced ? 0.4 : 0.12;
+    var v = state.sim.values[p.key];
+    v += (target - v) * k + (Math.random() - 0.5) * 2 * p.sim.noise;
+    v = Math.max(0, v);
+    state.sim.values[p.key] = v;
+    out[p.key] = v;
+  });
+  if (f) { f.ticks--; if (f.ticks <= 0) state.sim.force = null; }
+  receiveReadings(out, 'simulation');
+}
+
+function simulateEvent(level) {
+  if (state.mode !== 'simulation') { toast('Simulation tools only work when simulated data is selected.', 'warning'); return; }
+  if (!state.monitoring) { toast('Resume monitoring first.', 'warning'); return; }
+  var p = PARAMS[state.sim.demoIdx % PARAMS.length];
+  state.sim.demoIdx++;
+  var t = state.thresholds[p.key];
+  var target = level === 'critical' ? t.crit * 1.15 : t.warn + (t.crit - t.warn) * 0.4;
+  state.sim.force = { key: p.key, target: target, ticks: 14 };
+  toast('Simulated ' + level + ' excursion started for ' + p.label + ' (demo data).', 'info');
+}
+
+/* ---------- 8. ESP32 link monitoring & optional HTTP polling ---------- */
+function checkEspLink() {
+  if (state.mode !== 'esp32') return;
+  var online = state.lastEspTime !== null && (Date.now() - state.lastEspTime) <= ESP_TIMEOUT_MS;
+  if (online === state.espOnline) return;
+  state.espOnline = online;
+  var now = Date.now();
+  if (online) {
+    addAlert({ time: now, severity: 'info', key: null, label: 'ESP32', message: 'ESP32 connection established – receiving readings.', simulated: false, kind: 'system' });
+    toast('ESP32 online.', 'normal');
+  } else {
+    addAlert({ time: now, severity: 'info', key: null, label: 'ESP32', message: 'ESP32 offline – no data for ' + (ESP_TIMEOUT_MS / 1000) + ' s.', simulated: false, kind: 'system' });
+    toast('ESP32 went offline (no data for ' + (ESP_TIMEOUT_MS / 1000) + ' s).', 'warning');
+  }
+  renderAll();
+}
+
+function switchMode(mode) {
+  if (mode === state.mode) return;
+  if (mode === 'simulation') stopEspPolling(true);
+  state.mode = mode;
+  freshReadings();                  // never mix simulated and real history
+  addAlert({ time: Date.now(), severity: 'info', key: null, label: 'Data source',
+             message: mode === 'simulation' ? 'Data source set to SIMULATED data (demo values).' : 'Data source set to ESP32 live data – waiting for readings.',
+             simulated: mode === 'simulation', kind: 'system' });
+  renderAll();
+  if (mode === 'esp32') simTickStop();
+}
+function simTickStop() { state.sim.force = null; }
+
+function startEspPolling() {
+  var url = $('espUrl').value.trim();
+  if (!/^https?:\/\/[^\s]+$/i.test(url)) { toast('Enter a valid URL such as http://192.168.1.50/data', 'warning'); return; }
+  var isLocal = /^http:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/i.test(url);
+  if (window.location.protocol === 'https:' && /^http:/i.test(url) && !isLocal) {
+    toast('This HTTPS page cannot fetch a plain-HTTP ESP32 (mixed content is blocked). See the README for options.', 'critical', 8000);
+    return;
+  }
+  stopEspPolling(true);
+  state.poll.url = url;
+  storeSet(STORE.espUrl, url);
+  switchMode('esp32');
+  state.poll.status = 'Connecting…';
+  state.poll.timer = setInterval(pollEsp, SIM_INTERVAL_MS);
+  pollEsp();
+  renderEsp();
+  toast('Polling ' + url + ' every ' + (SIM_INTERVAL_MS / 1000) + ' s.', 'info');
+}
+function stopEspPolling(silent) {
+  if (state.poll.timer) { clearInterval(state.poll.timer); state.poll.timer = null; }
+  state.poll.status = 'Not polling';
+  state.poll.busy = false;
+  renderEsp();
+  if (!silent) toast('ESP32 polling stopped.', 'info');
+}
+function pollEsp() {
+  if (state.poll.busy || !state.poll.timer) return;
+  state.poll.busy = true;
+  var ctrl = new AbortController();
+  var to = setTimeout(function () { ctrl.abort(); }, 4000);
+  fetch(state.poll.url, { cache: 'no-store', signal: ctrl.signal })
+    .then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    })
+    .then(function (json) {
+      var r = receiveReadings(json, 'esp32');
+      state.poll.status = r.ok ? 'Receiving data' : 'Data rejected: ' + (r.error || 'unknown');
+    })
+    .catch(function (err) {
+      state.poll.status = 'Request failed: ' + (err && err.name === 'AbortError' ? 'timeout' : (err && err.message) || 'error');
+    })
+    .then(function () {
+      clearTimeout(to);
+      state.poll.busy = false;
+      renderEsp();
+    });
+}
+
+/* ---------- 9. Notifications (Notifications API + Service Worker) ---------- */
+function makeIcon(size) {
+  try {
+    var c = document.createElement('canvas');
+    c.width = size; c.height = size;
+    var g = c.getContext('2d'), s = size / 64;
+    g.fillStyle = '#0b0709'; g.fillRect(0, 0, size, size);
+    var grad = g.createLinearGradient(0, 0, size, size);
+    grad.addColorStop(0, '#ff5c7a'); grad.addColorStop(1, '#8f0a26');
+    g.fillStyle = grad;
+    g.beginPath();
+    g.moveTo(32 * s, 6 * s);
+    g.bezierCurveTo(46 * s, 22 * s, 52 * s, 32 * s, 52 * s, 41 * s);
+    g.arc(32 * s, 41 * s, 20 * s, 0, Math.PI, false);
+    g.bezierCurveTo(12 * s, 32 * s, 18 * s, 22 * s, 32 * s, 6 * s);
+    g.closePath(); g.fill();
+    return c.toDataURL('image/png');
+  } catch (e) { return undefined; }
+}
+
+function askServiceWorker(worker, message, timeoutMs) {
+  return new Promise(function (resolve, reject) {
+    var ch = new MessageChannel();
+    var timer = setTimeout(function () { reject(new Error('Service worker did not respond')); }, timeoutMs);
+    ch.port1.onmessage = function (e) { clearTimeout(timer); resolve(e.data); };
+    worker.postMessage(message, [ch.port2]);
+  });
+}
+
+function registerServiceWorker() {
+  var n = state.notif;
+  if (!('serviceWorker' in navigator)) {
+    n.swStatus = 'unsupported'; n.swDetail = 'Service workers are not supported in this browser.';
+    updateNotifUI(); return Promise.resolve();
+  }
+  if (window.location.protocol === 'file:') {
+    n.swStatus = 'insecure'; n.swDetail = 'Opened via file:// – serve the files over HTTPS or http://localhost.';
+    updateNotifUI(); return Promise.resolve();
+  }
+  if (!window.isSecureContext) {
+    n.swStatus = 'insecure'; n.swDetail = 'Not a secure context – use HTTPS or http://localhost.';
+    updateNotifUI(); return Promise.resolve();
+  }
+  n.swStatus = 'registering'; n.swDetail = 'Registering…';
+  updateNotifUI();
+  return navigator.serviceWorker.register('sw.js', { scope: './' })
+    .then(function () { return navigator.serviceWorker.ready; })
+    .then(function (reg) {
+      n.reg = reg;
+      n.swStatus = 'active';
+      n.swDetail = 'Active';
+      updateNotifUI();
+      if (reg.active) {
+        return askServiceWorker(reg.active, { type: 'PING' }, 2500).then(function (r) {
+          if (r && r.version) { n.swDetail = 'Active · v' + r.version; updateNotifUI(); }
+        }).catch(function () { /* version display is optional */ });
+      }
+    })
+    .catch(function (err) {
+      n.swStatus = 'failed';
+      n.swDetail = 'Registration failed: ' + ((err && err.message) || err);
+      updateNotifUI();
+    });
+}
+
+function notificationPermission() {
+  return state.notif.supported ? Notification.permission : 'unsupported';
+}
+
+/** Show a real notification through the service worker (falls back to the page API on desktop). */
+function sendNotification(opts) {
+  var n = state.notif;
+  if (!n.supported) return Promise.resolve({ ok: false, reason: 'Notifications API unsupported' });
+  if (!n.secure) return Promise.resolve({ ok: false, reason: 'Insecure context' });
+  if (Notification.permission !== 'granted') return Promise.resolve({ ok: false, reason: 'Permission ' + Notification.permission });
+
+  var sev = opts.severity;
+  var options = {
+    body: opts.body, tag: opts.tag || 'aquaguard-alert', renotify: true,
+    requireInteraction: sev === 'critical',
+    icon: state.icon, badge: state.badge, timestamp: Date.now(),
+    vibrate: sev === 'critical' ? [300, 120, 300, 120, 300] : sev === 'warning' ? [200, 100, 200] : [120],
+    actions: [{ action: 'open', title: 'Open dashboard' }, { action: 'dismiss', title: 'Dismiss' }],
+    data: { severity: sev, param: opts.param || null, url: window.location.href.split('#')[0] }
+  };
+  var payload = { title: opts.title, options: options };
+
+  function done(via) {
+    n.sent++;
+    n.last = { time: Date.now(), title: opts.title, via: via };
+    updateNotifUI();
+    return { ok: true, via: via };
+  }
+  function pageFallback(prevErr) {
+    try {
+      var plain = Object.assign({}, options); delete plain.actions;
+      new Notification(opts.title, plain);   // desktop browsers; Android Chrome throws here
+      return done('page');
+    } catch (e) {
+      return { ok: false, reason: (prevErr && prevErr.message) || (e && e.message) || 'Notification failed' };
+    }
+  }
+
+  if (n.reg && n.reg.active) {
+    return askServiceWorker(n.reg.active, { type: 'SHOW_NOTIFICATION', payload: payload }, 4000)
+      .then(function (res) {
+        if (res && res.ok) return done('service worker');
+        throw new Error((res && res.error) || 'Service worker could not show the notification');
+      })
+      .catch(function (err) {
+        return n.reg.showNotification(opts.title, options).then(function () { return done('registration'); })
+          .catch(function () { return pageFallback(err); });
+      });
+  }
+  return Promise.resolve(pageFallback(null));
+}
+
+function enableNotifications() {
+  var n = state.notif;
+  if (!n.supported) { toast('This browser does not support the Notifications API.', 'critical'); return; }
+  if (!n.secure) { toast('Notifications need HTTPS or http://localhost. See the README.', 'critical', 8000); return; }
+  if (Notification.permission === 'denied') {
+    toast('Notifications are blocked. Tap the lock/site-settings icon in the address bar, set Notifications to Allow, then reload.', 'warning', 9000);
+    updateNotifUI(); return;
+  }
+  if (Notification.permission === 'granted') { toast('Notifications are already enabled.', 'normal'); return; }
+  new Promise(function (resolve) {
+    var r = Notification.requestPermission(resolve);       // callback form for old browsers
+    if (r && typeof r.then === 'function') r.then(resolve); // promise form for modern browsers
+  }).then(function (result) {
+    updateNotifUI();
+    if (result === 'granted') {
+      toast('Notifications enabled. Use TEST NOTIFICATION to confirm.', 'normal');
+      if (!n.reg) registerServiceWorker();
+    } else if (result === 'denied') {
+      toast('Permission denied. Change it in your browser site settings to receive alerts.', 'warning', 8000);
+    } else {
+      toast('Permission prompt dismissed – tap ENABLE NOTIFICATIONS to try again.', 'info');
+    }
+  });
+}
+
+function testNotification() {
+  var n = state.notif;
+  if (!n.supported) { toast('This browser does not support the Notifications API.', 'critical'); return; }
+  if (!n.secure) { toast('Notifications need HTTPS or http://localhost.', 'critical'); return; }
+  if (Notification.permission !== 'granted') { toast('Press ENABLE NOTIFICATIONS and allow permission first.', 'warning'); return; }
+  sendNotification({
+    title: '🔔 AQUA GUARD – Test notification',
+    body: 'Notifications are working. This is a test message, not a sensor reading.',
+    tag: 'aquaguard-test', severity: 'info', param: 'test'
+  }).then(function (r) {
+    if (r.ok) toast('Test notification sent via ' + r.via + '.', 'normal');
+    else toast('Could not show notification: ' + r.reason, 'critical', 8000);
+  });
+}
+
+function initNotifications() {
+  var n = state.notif;
+  n.supported = ('Notification' in window);
+  n.secure = !!window.isSecureContext && window.location.protocol !== 'file:';
+  state.icon = makeIcon(192);
+  state.badge = makeIcon(96);
+  if (navigator.permissions && navigator.permissions.query) {
+    try {
+      navigator.permissions.query({ name: 'notifications' }).then(function (st) {
+        st.onchange = updateNotifUI;
+      }).catch(function () { /* optional */ });
+    } catch (e) { /* optional */ }
+  }
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', function (e) {
+      var d = e.data || {};
+      if (d.type === 'NOTIFICATION_CLICKED') {
+        toast('Opened from notification' + (d.data && d.data.param ? ' (' + d.data.param + ')' : '') + '.', 'info');
+        var panel = $('alertPanel');
+        if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  }
+  updateNotifUI();
+  registerServiceWorker();
+}
+
+function updateNotifUI() {
+  var n = state.notif, perm = notificationPermission();
+  $('nsSupport').textContent = n.supported ? 'Supported' : 'Not supported';
+  $('nsSecure').textContent = n.secure ? 'Yes' : 'No – HTTPS or localhost required';
+  $('nsPerm').textContent = perm === 'unsupported' ? 'Unavailable' : perm.charAt(0).toUpperCase() + perm.slice(1);
+  var swText = { idle: 'Starting…', unsupported: 'Unsupported', insecure: 'Unavailable', registering: 'Registering…', active: 'Active', failed: 'Failed' }[n.swStatus] || n.swStatus;
+  $('nsSW').textContent = (n.swStatus === 'active' || !n.swDetail) ? (n.swDetail || swText) : swText + ' – ' + n.swDetail;
+  $('nsCount').textContent = String(n.sent);
+  $('nsLast').textContent = n.last ? timeStr(n.last.time) + ' · ' + n.last.title : 'None yet';
+
+  var badge = $('notifBadge'), hint = $('notifHint');
+  var btnE = $('btnEnable'), btnT = $('btnTest');
+  var cls, txt, hintTxt, hintCls = 'hint';
+  if (!n.supported) {
+    cls = 'critical'; txt = 'UNSUPPORTED';
+    hintTxt = 'This browser does not support the Notifications API. The dashboard still shows in-page alerts and the alert history.';
+    hintCls = 'hint bad';
+  } else if (!n.secure) {
+    cls = 'warning'; txt = 'NEEDS HTTPS';
+    hintTxt = 'Browsers only allow notifications on HTTPS or http://localhost. Host the files over HTTPS (see README). In-page alerts still work.';
+    hintCls = 'hint bad';
+  } else if (perm === 'granted') {
+    cls = n.swStatus === 'active' ? 'normal' : 'warning'; txt = n.swStatus === 'active' ? 'ENABLED' : 'ENABLED (NO SW)';
+    hintTxt = n.swStatus === 'active'
+      ? 'Notifications are enabled. Warning, critical and recovery alerts will be sent while this page is open.'
+      : 'Permission granted, but the service worker is not active; notifications fall back to the page API (not supported on Android Chrome).';
+    hintCls = n.swStatus === 'active' ? 'hint good' : 'hint bad';
+  } else if (perm === 'denied') {
+    cls = 'critical'; txt = 'BLOCKED';
+    hintTxt = 'Notifications are blocked for this site. Open the site settings (lock icon in the address bar), set Notifications to Allow, then reload.';
+    hintCls = 'hint bad';
+  } else {
+    cls = 'warning'; txt = 'NOT ENABLED';
+    hintTxt = 'Press ENABLE NOTIFICATIONS and choose Allow when your browser asks.';
+  }
+  badge.className = 'badge ' + cls; badge.textContent = txt;
+  hint.className = hintCls; hint.textContent = hintTxt;
+  btnE.disabled = (!n.supported || !n.secure || perm === 'granted');
+  btnE.textContent = perm === 'granted' ? 'Notifications enabled ✓' : 'Enable notifications';
+  btnT.disabled = (!n.supported || !n.secure);
+  setChip('chipNotif', cls === 'normal' ? 'normal' : cls === 'critical' ? 'critical' : 'warning',
+          'Notifications: ' + (perm === 'granted' ? 'on' : perm === 'denied' ? 'blocked' : perm === 'unsupported' ? 'n/a' : 'off'));
+}
+
+/* ---------- 10. Rendering ---------- */
+function buildCards() {
+  var grid = $('sensorGrid');
+  grid.textContent = '';
+  PARAMS.forEach(function (p) {
+    var k = p.key;
+    var card = el('article', 'card sensor'); card.id = 'card-' + k; card.dataset.sev = 'normal';
+    card.innerHTML =
+      '<div class="card-head"><div><span class="ptitle">' + p.label + '</span>' +
+      '<span class="psub">' + p.sensor + ' · ' + p.pin + '</span></div>' +
+      '<span class="badge off" id="badge-' + k + '">NO DATA</span></div>' +
+      '<span class="src-tag sim" id="src-' + k + '">SIMULATED DATA</span>' +
+      '<div class="value-row"><span class="value" id="val-' + k + '">--</span><span class="unit">' + p.unit + '</span></div>' +
+      '<div class="meter"><div class="meter-fill" id="meter-' + k + '"></div>' +
+      '<i class="mk w" id="mkw-' + k + '"></i><i class="mk c" id="mkc-' + k + '"></i></div>' +
+      '<div class="thr-line">Warning ≥ <b id="tw-' + k + '"></b> · Critical ≥ <b id="tc-' + k + '"></b> ' + p.unit + '</div>' +
+      '<canvas class="chart" id="chart-' + k + '" role="img" aria-label="' + p.label + ' history graph"></canvas>' +
+      '<div class="mini-stats"><span>Min <b id="min-' + k + '">--</b></span><span>Avg <b id="avg-' + k + '">--</b></span><span>Max <b id="max-' + k + '">--</b></span></div>';
+    grid.appendChild(card);
+  });
+}
+
+function sourceTagFor(r) {
+  if (state.mode === 'simulation') return { cls: 'sim', text: 'SIMULATED DATA' };
+  if (!r) return { cls: 'off', text: 'WAITING FOR ESP32' };
+  if (state.espOnline) return { cls: 'live', text: 'LIVE · ESP32' };
+  return { cls: 'off', text: 'ESP32 OFFLINE · LAST VALUE' };
+}
+
+function renderCards() {
+  PARAMS.forEach(function (p) {
+    var k = p.key, r = state.readings[k], t = state.thresholds[k];
+    var sev = r ? r.severity : 'none';
+    $('card-' + k).dataset.sev = sev === 'none' ? 'normal' : sev;
+    $('val-' + k).textContent = r ? fmtValue(p, r.value) : '--';
+    var b = $('badge-' + k);
+    b.className = 'badge ' + (sev === 'none' ? 'off' : sev);
+    b.textContent = SEV_LABEL[sev];
+    $('tw-' + k).textContent = t.warn;
+    $('tc-' + k).textContent = t.crit;
+    var scaleMax = t.crit * 1.25;
+    $('meter-' + k).style.width = (r ? clamp(r.value / scaleMax * 100, 0, 100) : 0) + '%';
+    $('mkw-' + k).style.left = clamp(t.warn / scaleMax * 100, 0, 100) + '%';
+    $('mkc-' + k).style.left = clamp(t.crit / scaleMax * 100, 0, 100) + '%';
+    var tag = sourceTagFor(r), s = $('src-' + k);
+    s.className = 'src-tag ' + tag.cls; s.textContent = tag.text;
+
+    var vals = state.history[k].map(function (d) { return d.v; });
+    if (vals.length) {
+      var sum = vals.reduce(function (a, c) { return a + c; }, 0);
+      $('min-' + k).textContent = fmtValue(p, Math.min.apply(null, vals));
+      $('avg-' + k).textContent = fmtValue(p, sum / vals.length);
+      $('max-' + k).textContent = fmtValue(p, Math.max.apply(null, vals));
+    } else {
+      $('min-' + k).textContent = $('avg-' + k).textContent = $('max-' + k).textContent = '--';
+    }
+  });
+}
+
+function flashValues() {
+  PARAMS.forEach(function (p) {
+    var v = $('val-' + p.key);
+    v.classList.remove('flash');
+    void v.offsetWidth;            // restart CSS animation
+    v.classList.add('flash');
+  });
+}
+
+/** Canvas line chart with threshold lines – no external libraries needed. */
+function drawChart(key) {
+  var p = PARAM_BY_KEY[key], canvas = $('chart-' + key);
+  if (!canvas) return;
+  var dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
+  if (!w || !h) return;
+  if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+    canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+  }
+  var g = canvas.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+
+  var data = state.history[key], t = state.thresholds[key];
+  var padL = 42, padR = 10, padT = 12, padB = 20, pw = w - padL - padR, ph = h - padT - padB;
+  var vals = data.map(function (d) { return d.v; });
+  var hi = t.crit * 1.15, lo = p.chartMin;
+  if (vals.length) {
+    hi = Math.max(hi, Math.max.apply(null, vals) * 1.1);
+    lo = Math.min(lo, Math.floor(Math.min.apply(null, vals) * 0.9));
+  }
+  lo = Math.max(0, lo);
+  if (hi <= lo) hi = lo + 1;
+  var Y = function (v) { return padT + ph * (1 - (v - lo) / (hi - lo)); };
+  var step = pw / (HISTORY_LENGTH - 1);
+  var X = function (i) { return padL + pw - (data.length - 1 - i) * step; };
+  var tick = function (v) { return (hi - lo) >= 20 ? String(Math.round(v)) : v.toFixed(1); };
+
+  g.font = '10px system-ui, sans-serif';
+  g.textBaseline = 'middle';
+  // grid + axis labels
+  for (var i = 0; i <= 4; i++) {
+    var gv = lo + (hi - lo) * i / 4, gy = Y(gv);
+    g.strokeStyle = 'rgba(255,255,255,0.06)'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(padL, gy); g.lineTo(w - padR, gy); g.stroke();
+    g.fillStyle = 'rgba(200,180,185,0.7)'; g.textAlign = 'right';
+    g.fillText(tick(gv), padL - 6, gy);
+  }
+  // threshold lines
+  [['WARN', t.warn, '#ffb020'], ['CRIT', t.crit, '#ff3355']].forEach(function (th) {
+    var ty = Y(th[1]);
+    if (ty < padT - 1 || ty > padT + ph + 1) return;
+    g.save(); g.setLineDash([5, 4]); g.strokeStyle = th[2]; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(padL, ty); g.lineTo(w - padR, ty); g.stroke(); g.restore();
+    g.fillStyle = th[2]; g.textAlign = 'right';
+    g.fillText(th[0], w - padR - 2, ty - 7);
+  });
+  g.fillStyle = 'rgba(200,180,185,0.6)'; g.textAlign = 'left';
+  g.fillText('older', padL, h - 7); g.textAlign = 'right'; g.fillText('now', w - padR, h - 7);
+
+  if (!data.length) {
+    g.fillStyle = 'rgba(200,180,185,0.7)'; g.textAlign = 'center';
+    g.fillText(state.mode === 'esp32' ? 'Waiting for ESP32 readings…' : 'Waiting for data…', padL + pw / 2, padT + ph / 2);
+    return;
+  }
+  // filled area
+  var grad = g.createLinearGradient(0, padT, 0, padT + ph);
+  grad.addColorStop(0, hexToRgba(p.color, 0.35)); grad.addColorStop(1, hexToRgba(p.color, 0.0));
+  g.beginPath(); g.moveTo(X(0), padT + ph);
+  data.forEach(function (d, idx) { g.lineTo(X(idx), Y(d.v)); });
+  g.lineTo(X(data.length - 1), padT + ph); g.closePath(); g.fillStyle = grad; g.fill();
+  // line
+  g.save(); g.shadowColor = p.color; g.shadowBlur = 8;
+  g.beginPath();
+  data.forEach(function (d, idx) { if (idx === 0) g.moveTo(X(idx), Y(d.v)); else g.lineTo(X(idx), Y(d.v)); });
+  g.strokeStyle = p.color; g.lineWidth = 2; g.lineJoin = 'round'; g.stroke(); g.restore();
+  // latest point
+  var lx = X(data.length - 1), ly = Y(data[data.length - 1].v);
+  g.beginPath(); g.arc(lx, ly, 4, 0, Math.PI * 2); g.fillStyle = '#fff'; g.fill();
+  g.beginPath(); g.arc(lx, ly, 7, 0, Math.PI * 2); g.strokeStyle = hexToRgba(p.color, 0.6); g.lineWidth = 2; g.stroke();
+}
+function drawAllCharts() { PARAMS.forEach(function (p) { drawChart(p.key); }); }
+
+function renderSummary() {
+  var worst = 'none';
+  PARAMS.forEach(function (p) {
+    var r = state.readings[p.key];
+    if (!r) return;
+    if (worst === 'none' || SEV_RANK[r.severity] > SEV_RANK[worst]) worst = r.severity;
+  });
+  var o = $('overallStatus');
+  o.className = 'v ' + worst; o.textContent = SEV_LABEL[worst];
+  var m = $('monitorStatus');
+  m.className = 'v ' + (state.monitoring ? 'normal' : 'warning');
+  m.textContent = state.monitoring ? 'RUNNING' : 'PAUSED';
+  var active = PARAMS.filter(function (p) { return state.severity[p.key] !== 'normal'; }).length;
+  var a = $('activeCount');
+  a.className = 'v ' + (active ? 'critical' : 'normal'); a.textContent = String(active);
+  renderLastUpdate();
+
+  setChip('chipMonitor', state.monitoring ? 'normal' : 'warning', state.monitoring ? 'Monitoring: running' : 'Monitoring: paused');
+  if (state.mode === 'simulation') setChip('chipSource', 'sim', 'Source: simulated');
+  else setChip('chipSource', 'live', 'Source: ESP32');
+}
+
+function renderLastUpdate() {
+  var t = state.lastUpdate;
+  $('lastUpdate').textContent = t ? timeStr(t) + ' (' + agoStr(t) + ')' : 'No data yet';
+  $('ctlUpdate').textContent = t ? dateTimeStr(t) + ' (' + agoStr(t) + ')' : 'No data yet';
+}
+
+function renderBanner() {
+  var b = $('sourceBanner'), title = $('bannerTitle'), text = $('bannerText');
+  if (state.mode === 'simulation') {
+    b.className = 'banner sim'; title.textContent = 'Simulated data';
+    text.textContent = 'Values on this dashboard are generated by a simulator for demonstration. They are NOT real sensor measurements.';
+  } else if (!state.espOnline && state.lastEspTime === null) {
+    b.className = 'banner off'; title.textContent = 'Waiting for ESP32';
+    text.textContent = 'ESP32 live mode is selected. No readings have been received yet, so nothing is shown.';
+  } else if (state.espOnline) {
+    b.className = 'banner live'; title.textContent = 'ESP32 live data';
+    text.textContent = 'Readings are being received from the ESP32 sensor node.';
+  } else {
+    b.className = 'banner off'; title.textContent = 'ESP32 offline';
+    text.textContent = 'No data received for more than ' + (ESP_TIMEOUT_MS / 1000) + ' s. Displayed values are the last ones received.';
+  }
+}
+
+function renderAlerts() {
+  var activeBox = $('activeAlerts');
+  activeBox.textContent = '';
+  var active = PARAMS.filter(function (p) { return state.severity[p.key] !== 'normal'; });
+  var badge = $('alertBadge');
+  badge.className = 'badge ' + (active.length ? (active.some(function (p) { return state.severity[p.key] === 'critical'; }) ? 'critical' : 'warning') : 'normal');
+  badge.textContent = active.length ? active.length + ' ACTIVE' : 'ALL CLEAR';
+  if (!active.length) {
+    var anyData = PARAMS.some(function (p) { return !!state.readings[p.key]; });
+    activeBox.appendChild(el('div', 'empty', anyData ? '✔ All monitored parameters are within normal limits.' : 'Waiting for readings…'));
+  } else {
+    active.forEach(function (p) {
+      var r = state.readings[p.key], sev = state.severity[p.key];
+      var row = el('div', 'active-row ' + sev);
+      var left = el('div');
+      left.appendChild(el('div', '', p.label + ': ' + (r ? fmtValue(p, r.value) : '--') + ' ' + p.unit));
+      left.appendChild(el('span', 't', 'Since ' + (state.activeSince[p.key] ? timeStr(state.activeSince[p.key]) : '--')));
+      row.appendChild(left);
+      row.appendChild(el('span', 'badge ' + sev, SEV_LABEL[sev]));
+      activeBox.appendChild(row);
+    });
+  }
+
+  var list = $('alertList');
+  list.textContent = '';
+  $('alertCount').textContent = '(' + state.alerts.length + ')';
+  if (!state.alerts.length) {
+    var li = el('li', 'empty', 'No alerts recorded yet.');
+    list.appendChild(li);
+    return;
+  }
+  state.alerts.forEach(function (a) {
+    var li = el('li', 'alert-item sev-' + a.severity);
+    var top = el('div', 'ai-top');
+    top.appendChild(el('span', 'badge ' + a.severity, ALERT_LABEL[a.severity]));
+    top.appendChild(el('span', 'ai-time', dateTimeStr(a.time)));
+    li.appendChild(top);
+    li.appendChild(el('div', 'ai-msg', a.message));
+    var meta = a.kind === 'system' ? 'System event' :
+      a.label + ' · ' + Number(a.value).toFixed(PARAM_BY_KEY[a.key] ? PARAM_BY_KEY[a.key].decimals : 1) + ' ' + a.unit;
+    if (a.simulated) meta += ' · SIMULATED';
+    li.appendChild(el('div', 'ai-meta', meta));
+    list.appendChild(li);
+  });
+}
+
+function espStatusInfo() {
+  if (state.mode === 'simulation') return { cls: 'off', dot: '', text: 'NOT CONFIGURED', link: 'Not connected (simulation active)' };
+  if (state.lastEspTime === null) return { cls: 'warning', dot: 'warning', text: 'WAITING', link: 'Waiting for first packet' };
+  if (state.espOnline) return { cls: 'normal', dot: 'normal', text: 'ONLINE', link: 'Online' };
+  return { cls: 'critical', dot: 'critical', text: 'OFFLINE', link: 'Offline (no data > ' + (ESP_TIMEOUT_MS / 1000) + ' s)' };
+}
+
+function renderEsp() {
+  var info = espStatusInfo();
+  var badge = $('espBadge'); badge.className = 'badge ' + info.cls; badge.textContent = info.text;
+  $('espDot').className = 'dot ' + info.dot;
+  $('espLink').textContent = info.link;
+  $('espSource').textContent = state.mode === 'simulation' ? 'Simulated data (demo)' : 'ESP32 live data';
+  $('espLast').textContent = state.lastEspTime ? timeStr(state.lastEspTime) + ' (' + agoStr(state.lastEspTime) + ')' : 'None received';
+  $('espPackets').textContent = String(state.packets);
+  $('espPoll').textContent = state.poll.timer ? state.poll.status : 'Not polling';
+  setChip('chipEsp', info.cls === 'off' ? 'info' : info.cls, 'ESP32: ' + info.text.toLowerCase());
+
+  $('btnModeSim').classList.toggle('active', state.mode === 'simulation');
+  $('btnModeEsp').classList.toggle('active', state.mode === 'esp32');
+  $('btnEspConnect').disabled = !!state.poll.timer;
+  $('btnEspDisconnect').disabled = !state.poll.timer;
+
+  var body = $('sensorRows');
+  body.textContent = '';
+  PARAMS.forEach(function (p) {
+    var tr = el('tr');
+    var c1 = el('td'); c1.appendChild(el('div', '', p.label)); c1.appendChild(el('div', 'psub', p.sensor));
+    var c2 = el('td', '', p.pin);
+    var c3 = el('td');
+    var cls, txt;
+    if (state.mode === 'simulation') { cls = 'info'; txt = 'SIMULATED'; }
+    else if (state.lastEspTime === null) { cls = 'off'; txt = 'WAITING'; }
+    else if (!state.espOnline) { cls = 'critical'; txt = 'LINK DOWN'; }
+    else if (state.sensorOk[p.key] === true) { cls = 'normal'; txt = 'CONNECTED'; }
+    else { cls = 'warning'; txt = 'NO SIGNAL'; }
+    c3.appendChild(el('span', 'badge ' + cls, txt));
+    tr.appendChild(c1); tr.appendChild(c2); tr.appendChild(c3);
+    body.appendChild(tr);
+  });
+}
+
+function renderControls() {
+  $('ctlStatus').textContent = state.monitoring ? 'RUNNING' : 'PAUSED';
+  $('ctlCount').textContent = String(state.readingsCount);
+  $('ctlIgnored').textContent = String(state.ignoredCount);
+  $('btnPause').disabled = !state.monitoring;
+  $('btnResume').disabled = state.monitoring;
+  var demoOk = state.mode === 'simulation' && state.monitoring;
+  $('btnDemoWarn').disabled = !demoOk;
+  $('btnDemoCrit').disabled = !demoOk;
+}
+
+function renderAll() {
+  renderBanner();
+  renderSummary();
+  renderCards();
+  renderAlerts();
+  renderEsp();
+  renderControls();
+  drawAllCharts();
+}
+
+/* ---------- 11. System controls ---------- */
+function pauseMonitoring() {
+  if (!state.monitoring) return;
+  state.monitoring = false;
+  addAlert({ time: Date.now(), severity: 'info', key: null, label: 'System', message: 'Monitoring paused by user.', simulated: false, kind: 'system' });
+  renderAll();
+  toast('Monitoring paused. Incoming readings are ignored.', 'info');
+}
+function resumeMonitoring() {
+  if (state.monitoring) return;
+  state.monitoring = true;
+  addAlert({ time: Date.now(), severity: 'info', key: null, label: 'System', message: 'Monitoring resumed by user.', simulated: false, kind: 'system' });
+  renderAll();
+  toast('Monitoring resumed.', 'normal');
+}
+/** Clears live data (readings, graphs, ESP32 link state). Does NOT touch thresholds. */
+function freshReadings() {
+  PARAMS.forEach(function (p) {
+    var k = p.key;
+    state.severity[k] = 'normal'; state.readings[k] = null; state.history[k] = [];
+    state.lastSeen[k] = null; state.sensorOk[k] = null; state.activeSince[k] = null; state.lastNotified[k] = 'normal';
+    state.sim.values[k] = p.sim.base;
+  });
+  state.sim.force = null;
+  state.lastUpdate = null; state.lastEspTime = null; state.espOnline = false;
+  state.packets = 0; state.readingsCount = 0; state.ignoredCount = 0;
+}
+function resetDashboard() {
+  if (!window.confirm('Reset the dashboard? Readings, graphs and alert history will be cleared. Thresholds are kept.')) return;
+  freshReadings();
+  state.alerts = [];
+  state.monitoring = true;
+  saveAlerts();
+  renderAll();
+  toast('Dashboard reset.', 'info');
+}
+
+/* ---------- 12. Initialisation ---------- */
+function init() {
+  loadThresholds();
+  loadAlerts();
+  freshReadings();
+  buildCards();
+  buildThresholdForm();
+  var savedUrl = storeGet(STORE.espUrl);
+  if (savedUrl) $('espUrl').value = savedUrl;
+
+  bind('btnEnable', 'click', enableNotifications);
+  bind('btnTest', 'click', testNotification);
+  bind('btnPause', 'click', pauseMonitoring);
+  bind('btnResume', 'click', resumeMonitoring);
+  bind('btnReset', 'click', resetDashboard);
+  bind('btnDemoWarn', 'click', function () { simulateEvent('warning'); });
+  bind('btnDemoCrit', 'click', function () { simulateEvent('critical'); });
+  bind('btnClearAlerts', 'click', clearAlertHistory);
+  bind('btnApplyThr', 'click', applyThresholds);
+  bind('btnDefaultThr', 'click', restoreDefaultThresholds);
+  bind('btnModeSim', 'click', function () { switchMode('simulation'); });
+  bind('btnModeEsp', 'click', function () { switchMode('esp32'); });
+  bind('btnEspConnect', 'click', startEspPolling);
+  bind('btnEspDisconnect', 'click', function () { stopEspPolling(false); });
+
+  var resizeQueued = false;
+  window.addEventListener('resize', function () {
+    if (resizeQueued) return;
+    resizeQueued = true;
+    window.requestAnimationFrame(function () { resizeQueued = false; drawAllCharts(); });
+  });
+
+  renderAll();
+  initNotifications();
+
+  simTick();                                   // first simulated reading immediately
+  setInterval(simTick, SIM_INTERVAL_MS);       // simulated readings every 2 s (simulation mode only)
+  setInterval(function () { checkEspLink(); renderLastUpdate(); renderEsp(); }, 1000);
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
+</script>
+</body>
+</html>
